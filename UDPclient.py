@@ -7,7 +7,7 @@ import numpy as np
 import header
 
 # serverName = input("Enter IP Address of server: ")  # get ip address of server from user
-serverName = "10.250.1.66"
+serverName = ""
 serverPort = 12000  # server port
 
 clientSocket = socket(AF_INET, SOCK_DGRAM)  # underlying network uses ipv4 address, creates UDP socket
