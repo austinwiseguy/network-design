@@ -1,3 +1,5 @@
+# Header file
+# Austin Wise, Alan Bulavsky, Kelvin Amuma
 import numpy as np
 import os
 import random
@@ -9,14 +11,16 @@ def error_path():
     return error_type
 
 
+# this will also be at the end
 def random_loss(file, loss_pct):
     return
 
 
 # make_packet function splits file into packets of 1024 bytes to send to server
-def make_packet(packet_data, checksum):
+def make_packet(seq, packet_data, checksum):
     packet = bytearray()
 
+    packet += bytearray(seq)
     packet += bytearray(packet_data)  # append bytes to the packet
     packet += bytearray(checksum)           # append checksum to packet
     return packet                     # returns packet_data, when empty this will be 0
@@ -28,6 +32,7 @@ def get_size(file):
     return temp                             # return temp as string
 
 
+# binary math to add bits and checksum
 def bin_math(x, y, sum_arr):
     carry = 0
 
@@ -56,13 +61,13 @@ def bin_math(x, y, sum_arr):
     return sum_list
 
 
+# checksum algorithm
 def check_sum(data):
-    check_packet_data = data
 
-    if not check_packet_data:
+    if not data:
         return
 
-    x = [j for j in check_packet_data]
+    x = [j for j in data]
     num1 = bin(x[0])[2:]
     if len(x) > 1:
         num2 = bin(x[1])[2:]
@@ -86,14 +91,23 @@ def check_sum(data):
     return bin_math(arr1, arr2, sum_arr)
 
 
+# check if data gets corrupted based on user input
 def is_corrupt():
     return
 
 
-def is_ack():
-    return
+# flip ack or seq number bit
+def flip_ack(ack):
+    if ack == b'0':
+        ack = b'1'
+
+    elif ack == b'1':
+        ack = b'0'
+
+    return ack
 
 
+# don't think we need this
 def has_seq_num():
     return
 
