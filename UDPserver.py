@@ -31,7 +31,7 @@ while True:
             seq = packet_data[:1]                                       # first byte of packet is sequence num
             if ack == seq:
                 checksum = list(packet_data[-8:])                       # last eight bytes are checksum
-                msg = packet_data[0:4]                                  # bytes 2-3 are image data
+                msg = packet_data[1:3]                                  # bytes 2-3 are image data
                 
                 server_checksum = header.check_sum(msg)
                 flip = header.one_comp(server_checksum)
