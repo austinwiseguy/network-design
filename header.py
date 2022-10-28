@@ -107,6 +107,37 @@ def flip_ack(ack):
     return ack
 
 
+def one_comp(checksum):
+    index = 0
+    x = checksum[index]
+    arr3 = np.empty(8, dtype=int)
+    arr3 = arr3.tolist()
+
+    while index < 8:
+        if checksum[index] == 0:
+            arr3[index] = 1
+        elif checksum[index] == 1:
+            arr3[index] = 0
+
+        index += 1
+    return arr3
+
+
+def add(flip, checksum, ack):
+    index = 0
+    arr4 = np.empty(8, dtype=int)
+
+    while index < 8:
+        arr4[index] = server_check_sum[index] + flip[index]
+        index += 1
+
+    if arr4.tolist() == [1, 1, 1, 1, 1, 1, 1, 1]:
+        ack = flip_ack(ack)
+        return ack
+    else:
+        ack = flip_ack(ack)
+        return ack
+
 # don't think we need this
 def has_seq_num():
     return
