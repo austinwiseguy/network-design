@@ -32,15 +32,17 @@ while True:
             if ack == seq:
                 checksum = list(packet_data[-8:])                       # last eight bytes are checksum
                 msg = packet_data[0:4]                                  # bytes 2-3 are image data
+                
                 server_checksum = header.check_sum(msg)
                 flip = header.one_comp(server_checksum)
-                add = header.add(flip, server_checksum, ack)            # adds checksum to verify, flips ack if correct
-                # will compute checksum here
-                # --------------------------
-                # read 2 bytes of image data
+                add = header.add(flip, server_checksum, ack)            # adds checksum to verify
+                
                 file.write(msg)                                         # write to file
                 send_packet = header.make_packet(ack, seq, checksum)    # assemble ack packet
                 serverSocket.sendto(send_packet, clientAddress)         # send ack to client
+                
+                ack = add                                               # updates ack for next packet
+                
             else:
                 serverSocket.sendto(send_packet, clientAddress)         # resend ack to client
 
