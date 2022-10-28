@@ -30,7 +30,6 @@ try:
     # while the packet is not empty, the packet gets sent to the server to write to the new image
     while msg:
         checksum = header.check_sum(msg)                                # compute checksum
-
         send_packet = header.make_packet(seq, msg, checksum)            # make packet
         clientSocket.sendto(send_packet, (serverName, serverPort))      # send data over UDP socket
 
@@ -57,7 +56,7 @@ finally:
     transfer_file.close()
 
 
-return_msg, serverAddress = clientSocket.recvfrom(2048)     # receives confirmation message from server
+# return_msg, serverAddress = clientSocket.recvfrom(2048)     # receives confirmation message from server
 clientSocket.close()                                        # close the socket
 
 print("Successfully copied image to server!")               # prints completion statement
