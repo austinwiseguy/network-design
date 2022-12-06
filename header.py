@@ -3,32 +3,63 @@
 import numpy as np
 import os
 import random
+import time
 
 
-# will implement this last
-def error_path():
-    error_type = input("Enter number for program path (1 - No errors | 2 - Data Error | 3 - ACK Error): ")
-    return error_type
+# random error with ACK packer from server
+def ack_error(data, loss):
+
+    loss_pct = 100 - loss
+    x = random.randint(0, 100)
+
+    if x > loss_pct:
+        data = flip_ack(data)
+    return data
 
 
-# this will also be at the end
-def random_loss(file, loss_pct):
-    return
+# random error with data packet from client
+def data_error(msg, loss):
+    loss_pct = 100 - loss
+    x = random.randint(0, 100)
+
+    print("x = ", x)
+
+    if x > loss_pct:
+        y = bytearray()
+        print(msg)
+
+        w = [j for j in msg]
+        y += w
+
+        print(y)
+        return msg
+    else:
+        return msg
+
+
+# fragment the image into smaller packets with size 1024 bytes
+def fragment_image(img, packet_size):
+    packets = []
+    file_size = get_size(img)
+    with open(img, 'rb') as file:
+        total_packets = file_size // packet_size + 2
+        for i in range(0, total_packets):
+            packets.append(file.read(packet_size))
+    return packets
 
 
 # make_packet function splits file into packets of 1024 bytes to send to server
 def make_packet(seq, packet_data, checksum):
     packet = bytearray()
-
     packet += bytearray(seq)
     packet += bytearray(packet_data)  # append bytes to the packet
-    packet += bytearray(checksum)           # append checksum to packet
+    packet += bytearray(checksum)     # append checksum to packet
     return packet                     # returns packet_data, when empty this will be 0
 
 
 # get_size obtains the size of the bitmap file so the server knows how much data to read
 def get_size(file):
-    temp = str(os.stat(file).st_size)       # get file size and store it in temporary variable
+    temp = os.stat(file).st_size      # get file size and store it in temporary variable
     return temp                             # return temp as string
 
 
@@ -91,11 +122,6 @@ def check_sum(data):
     return bin_math(arr1, arr2, sum_arr)
 
 
-# check if data gets corrupted based on user input
-def is_corrupt():
-    return
-
-
 # flip ack or seq number bit
 def flip_ack(ack):
     if ack == b'0':
@@ -107,9 +133,9 @@ def flip_ack(ack):
     return ack
 
 
+# one's compliment
 def one_comp(checksum):
     index = 0
-    x = checksum[index]
     arr3 = np.empty(8, dtype=int)
     arr3 = arr3.tolist()
 
@@ -123,12 +149,13 @@ def one_comp(checksum):
     return arr3
 
 
+# add checksums to verify correct bits in place
 def add(flip, checksum, ack):
     index = 0
     arr4 = np.empty(8, dtype=int)
 
     while index < 8:
-        arr4[index] = server_check_sum[index] + flip[index]
+        arr4[index] = checksum[index] + flip[index]
         index += 1
 
     if arr4.tolist() == [1, 1, 1, 1, 1, 1, 1, 1]:
@@ -137,8 +164,4 @@ def add(flip, checksum, ack):
     else:
         ack = flip_ack(ack)
         return ack
-
-# don't think we need this
-def has_seq_num():
-    return
 
