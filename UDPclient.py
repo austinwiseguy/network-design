@@ -10,12 +10,12 @@ from timer import Timer
 # timeout of 50ms
 TIMEOUT_INT = 0.05
 
-serverName = "192.168.1.163"  # input("Enter IP Address of server: ")  # get ip address of server from user
+serverName = "10.250.1.66"  # input("Enter IP Address of server: ")  # get ip address of server from user
 serverPort = 12000  # server port
 
 clientSocket = socket(AF_INET, SOCK_DGRAM)  # underlying network uses ipv4 address, creates UDP socket
 
-img = r"C:\Users\awwis\Desktop\jpeg_image.jpeg"
+img = r"C:\Users\awise\Desktop\jpeg_image.jpeg"
 
 # input("Enter location of image to send to server: ")  # get location and name of image
 # img = r"C:\Users\awwis\Desktop\diode.bmp"
@@ -23,9 +23,7 @@ img = r"C:\Users\awwis\Desktop\jpeg_image.jpeg"
 type_error = 0
 
 count = 0
-
-timeout = False
-# clientSocket.settimeout(TIMEOUT_INT)
+i = 0
 
 # phase 5 variables
 next_seq = 0
@@ -44,19 +42,22 @@ try:
     num_packets = len(packets)                         # get number of packets in buffer
 
     # while the packet is not empty, the packet gets sent to the server to write to the new image
-    for i in range(num_packets):
+    # for i in range(num_packets):
+    while base is not num_packets:
         if not packets:
             continue
 
         # compute checksum
-        checksum = header.check_sum(packets[i])
+        checksum = header.check_sum(packets[next_seq])
 
-        if next_seq < base + window_size and next_seq < num_packets:
+        if next_seq <= base + window_size and next_seq < num_packets:
             send_packet = header.package_data_packet(packets[next_seq], next_seq, checksum)     # make packet
             clientSocket.sendto(send_packet, (serverName, serverPort))          # send data over UDP socket
-
+            count += 1
+            # if base of window equals the previous highest seq num, start the timer
             if base == next_seq:
                 send_timer.start()
+
             next_seq += 1
 
         else:
@@ -71,14 +72,15 @@ try:
             if ack:
                 base = seq + 1
 
-            # if the base equals the sequence number, stop the timer, else start the timer
+            # if the base equals the next sequence number, stop the timer, else start the timer
             if base == next_seq:
                 send_timer.stop()
 
             else:
                 send_timer.start()
 
-        count += 1
+        # count += 1
+        i += 1
 
     end = time.time()
 
@@ -91,6 +93,6 @@ except FileNotFoundError:
 clientSocket.close()                                        # close the socket
 
 total = end - start
-
+print("Count: ", count)
 print("Total time: ", total, "s")
 print("Successfully copied image to server!")               # prints completion statement
