@@ -3,7 +3,37 @@
 import numpy as np
 import os
 import random
+import pickle
 import time
+
+
+# combine the checksum and seqNum in one pkg
+class AssembleDataPacket:
+    def __init__(self, checksum, sequence, packet):
+        self.cs = checksum
+        self.sequence = sequence
+        self.packet = packet
+
+
+# combine the server ACK packet
+class AssembleACKPacket:
+    def __init__(self, serv_seq, verify):
+        self.serv_seq = serv_seq
+        self.verify = verify
+
+
+# gets packet in correct orientation to send through UDP socket
+def package_data_packet(pkt, sequence, cs):
+    ready_pkt = AssembleDataPacket(cs, sequence, pkt)
+    ready_pkt = pickle.dumps(ready_pkt)
+    return ready_pkt
+
+
+# gets ack packet assembled
+def package_ack_packet(sequence, verify):
+    ready_pkt = AssembleACKPacket(sequence, verify)
+    ready_pkt = pickle.dumps(ready_pkt)
+    return ready_pkt
 
 
 # random error with ACK packer from server
@@ -54,7 +84,13 @@ def make_packet(seq, packet_data, checksum):
     packet += bytearray(seq)
     packet += bytearray(packet_data)  # append bytes to the packet
     packet += bytearray(checksum)     # append checksum to packet
+
     return packet                     # returns packet_data, when empty this will be 0
+
+
+# assemble ack packet on server side
+def make_server_packet(expected, ack, checksum):
+    return
 
 
 # get_size obtains the size of the bitmap file so the server knows how much data to read
@@ -159,9 +195,9 @@ def add(flip, checksum, ack):
         index += 1
 
     if arr4.tolist() == [1, 1, 1, 1, 1, 1, 1, 1]:
-        ack = flip_ack(ack)
-        return ack
+        # ack = flip_ack(ack)
+        return 1
     else:
-        ack = flip_ack(ack)
-        return ack
+        # ack = flip_ack(ack)
+        return 0
 
