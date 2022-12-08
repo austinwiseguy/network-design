@@ -6,13 +6,13 @@ import random
 import header
 import pickle
 
-serverIP = "192.168.1.163"
+serverIP = "10.250.1.66"
 serverPort = 12000
 
 serverSocket = socket(AF_INET, SOCK_DGRAM)                  # sets up server socket
 serverSocket.bind((serverIP, serverPort))                         # assigns port number to the server's socket
 
-image = r"C:\Users\awwis\Desktop\image.jpeg"
+image = r"C:\Users\awise\Desktop\image.jpeg"
 # input("Enter location and image to write data to: ")  # prompt user to enter image location
 random.seed()
 
@@ -45,18 +45,20 @@ while True:
             msg = packet_data.packet      # img data
 
             server_checksum = header.check_sum(msg)
-            flip = header.one_comp(server_checksum)
-            verify = header.add(flip, server_checksum, ack)            # adds checksum to verify (returns 1 if good)
+
+            if server_checksum is None:
+                verify = 1
+
+            else:
+                flip = header.one_comp(server_checksum)
+                verify = header.add(flip, server_checksum, ack)         # adds checksum to verify (returns 1 if good)
 
             file.write(msg)                                         # write to file
-            # print(i)
-            send_packet = header.package_ack_packet(ack, verify)    # assemble ack packet
-            # send_packet = pickle.dumps(send_packet)
 
-            # ack = add
-            ack += 1                                                # sets ack to next packet
+            send_packet = header.package_ack_packet(ack, verify)    # assemble ack packet
 
             serverSocket.sendto(send_packet, clientAddress)         # send to client
+            ack += 1                                                # sets ack to next packet
 
         else:
             print("ERROR")
