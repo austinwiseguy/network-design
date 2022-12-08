@@ -49,7 +49,7 @@ while True:
             verify = header.add(flip, server_checksum, ack)            # adds checksum to verify (returns 1 if good)
 
             file.write(msg)                                         # write to file
-            print(i)
+            # print(i)
             send_packet = header.package_ack_packet(ack, verify)    # assemble ack packet
             # send_packet = pickle.dumps(send_packet)
 
