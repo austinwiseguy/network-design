@@ -51,9 +51,10 @@ try:
         checksum = header.check_sum(packets[next_seq])
 
         if next_seq <= base + window_size and next_seq < num_packets:
+
             send_packet = header.package_data_packet(packets[next_seq], next_seq, checksum)     # make packet
             clientSocket.sendto(send_packet, (serverName, serverPort))          # send data over UDP socket
-            count += 1
+
             # if base of window equals the previous highest seq num, start the timer
             if base == next_seq:
                 send_timer.start()
@@ -92,7 +93,9 @@ except FileNotFoundError:
 
 clientSocket.close()                                        # close the socket
 
+# completion time
 total = end - start
+
 print("Count: ", count)
-print("Total time: ", total, "s")
+print("Total time: ", total * (10**3), "s")
 print("Successfully copied image to server!")               # prints completion statement
