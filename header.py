@@ -22,18 +22,18 @@ class AssembleACKPacket:
         self.verify = verify
 
 
-# gets packet in correct orientation to send through UDP socket
+# gets packet in correct orientation to send through UDP socket on client side
 def package_data_packet(pkt, sequence, cs):
-    ready_pkt = AssembleDataPacket(cs, sequence, pkt)
-    ready_pkt = pickle.dumps(ready_pkt)
-    return ready_pkt
+    packaged_packet = AssembleDataPacket(cs, sequence, pkt)
+    packaged_packet = pickle.dumps(packaged_packet)
+    return packaged_packet
 
 
-# gets ack packet assembled
+# gets ack packet assembled in correct orientation on server side
 def package_ack_packet(sequence, verify):
-    ready_pkt = AssembleACKPacket(sequence, verify)
-    ready_pkt = pickle.dumps(ready_pkt)
-    return ready_pkt
+    packaged_packet = AssembleACKPacket(sequence, verify)
+    packaged_packet = pickle.dumps(packaged_packet)
+    return packaged_packet
 
 
 # random error with ACK packer from server
@@ -86,11 +86,6 @@ def make_packet(seq, packet_data, checksum):
     packet += bytearray(checksum)     # append checksum to packet
 
     return packet                     # returns packet_data, when empty this will be 0
-
-
-# assemble ack packet on server side
-def make_server_packet(expected, ack, checksum):
-    return
 
 
 # get_size obtains the size of the bitmap file so the server knows how much data to read
@@ -171,9 +166,13 @@ def flip_ack(ack):
 
 # one's compliment
 def one_comp(checksum):
+
     index = 0
     arr3 = np.empty(8, dtype=int)
     arr3 = arr3.tolist()
+
+    if checksum == 0:
+        return arr3
 
     while index < 8:
         if checksum[index] == 0:
@@ -200,4 +199,3 @@ def add(flip, checksum, ack):
     else:
         # ack = flip_ack(ack)
         return 0
-
