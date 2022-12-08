@@ -4,62 +4,63 @@
 from socket import *
 import random
 import header
+import pickle
 
-# serverIP = ""
-serverIP = input("Enter IP address of server: ")
+serverIP = "192.168.1.163"
 serverPort = 12000
 
 serverSocket = socket(AF_INET, SOCK_DGRAM)                  # sets up server socket
-serverSocket.bind((serverIP, serverPort))                   # assigns port number to the server's socket
+serverSocket.bind((serverIP, serverPort))                         # assigns port number to the server's socket
 
-# image = r"C:\Users\awwis\Desktop\image.jpeg"
-image = input("Enter location and image to write data to: ")       # prompt user to enter image location
-error_type = 0
-
-# loss_pct = input("Enter loss percentage: ")
-loss_pct = 5
-
+image = r"C:\Users\awwis\Desktop\image.jpeg"
+# input("Enter location and image to write data to: ")  # prompt user to enter image location
 random.seed()
 
 print("ready to receive...")    # waiting
 file = open(image, "wb")        # open new image to write
 i = 0
-ack = b'0'
+ack = 0
 
 
 # while connection is open
 while True:
+    # receive data from client
     segAndAddr = serverSocket.recvfrom(2048)
-    packet_data = segAndAddr[0]
-    clientAddress = segAndAddr[1]
+    packet_data, clientAddress = segAndAddr
 
+    # if there is no data left to transmit, close the file
     if packet_data == b"done":
         file.close()
         break
 
     else:
-        seq = packet_data[:1]    # first byte of packet is sequence num
+        i += 1
+
+        packet_data = pickle.loads(packet_data)     # load class data into bytes
+
+        seq = packet_data.sequence    # first byte of packet is sequence num
 
         if ack == seq:
-            checksum = list(packet_data[-8:])                       # last eight bytes are checksum
-            msg = packet_data[1:len(packet_data)-8]                 # bytes 2-3 are image data
+            checksum = packet_data.cs  # get checksum
+            msg = packet_data.packet      # img data
 
-            if error_type == 2:
-                msg = header.data_error(msg, loss_pct)
-
-            # print("msg = ", msg)
             server_checksum = header.check_sum(msg)
             flip = header.one_comp(server_checksum)
-            add = header.add(flip, server_checksum, ack)            # adds checksum to verify
+            verify = header.add(flip, server_checksum, ack)            # adds checksum to verify (returns 1 if good)
 
             file.write(msg)                                         # write to file
-            send_packet = header.make_packet(ack, seq, checksum)    # assemble ack packet
-            serverSocket.sendto(send_packet, clientAddress)
+            print(i)
+            send_packet = header.package_ack_packet(ack, verify)    # assemble ack packet
+            # send_packet = pickle.dumps(send_packet)
 
-            ack = add                                               # sets ack to next packet
+            # ack = add
+            ack += 1                                                # sets ack to next packet
+
+            serverSocket.sendto(send_packet, clientAddress)         # send to client
 
         else:
-            serverSocket.sendto(send_packet, clientAddress)         # resend ack packet to client
+            print("ERROR")
+            # serverSocket.sendto(send_packet, clientAddress)         # resend ack packet to client
 
 serverSocket.close()                                        # close server socket
-print("file written successfully")
+print("Image written successfully!")
