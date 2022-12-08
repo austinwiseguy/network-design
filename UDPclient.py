@@ -2,85 +2,85 @@
 # UDP Client
 
 from socket import *
-import numpy as np
 import header
 import time
-import timeit
-import datetime
+import pickle
+from timer import Timer
 
-# serverName = ""
-serverName = input("Enter IP Address of client: ")      # get ip address of server from user
+# timeout of 50ms
+TIMEOUT_INT = 0.05
+
+serverName = "192.168.1.163"  # input("Enter IP Address of server: ")  # get ip address of server from user
 serverPort = 12000  # server port
 
 clientSocket = socket(AF_INET, SOCK_DGRAM)  # underlying network uses ipv4 address, creates UDP socket
 
-# img = r"C:\Users\awwis\Desktop\new_jpeg_image.jpeg"
-img = input("Enter location of image to send to server: ")  # get location and name of image
+img = r"C:\Users\awwis\Desktop\jpeg_image.jpeg"
 
-msg = 1
-x = 0
-seq = b'0'
-timeout = 40 * 10**3
-end = 0
-flag = 0
+# input("Enter location of image to send to server: ")  # get location and name of image
+# img = r"C:\Users\awwis\Desktop\diode.bmp"
 
-# error_type = input("Enter number for program path (1 - No errors | 2 - ACK bit-error | 3 - DATA bit-error) |
-# 4 - ACK packet loss | 5 - DATA packet loss: ")
-error_type = 0
-# loss_pct = input("Enter loss pct: ")
-loss_pct = 0
+type_error = 0
+
+count = 0
+
+timeout = False
+# clientSocket.settimeout(TIMEOUT_INT)
+
+# phase 5 variables
+next_seq = 0
+base = 0
+window_size = 10
+
+send_timer = Timer(TIMEOUT_INT)
+# error_type = input("Enter number for program path (1 - No errors | 2 - Data Error | 3 - ACK Error): ")
 
 packets = []
 
-start = datetime.datetime.now()                         # track execution time
+start = time.time()
 
 try:
     packets = header.fragment_image(img, 1024)         # opens user image for reading binary
-    size = header.get_size(img) // 1024
+    num_packets = len(packets)                         # get number of packets in buffer
 
     # while the packet is not empty, the packet gets sent to the server to write to the new image
-    for i in range(len(packets)):
-        msg = packets[i]
-        if not msg:
+    for i in range(num_packets):
+        if not packets:
             continue
 
-        checksum = header.check_sum(msg)                                # compute checksum
+        # compute checksum
+        checksum = header.check_sum(packets[i])
 
-        send_packet = header.make_packet(seq, msg, checksum)            # make packet
-        clientSocket.sendto(send_packet, (serverName, serverPort))      # send data over UDP socket
+        if next_seq < base + window_size and next_seq < num_packets:
+            send_packet = header.package_data_packet(packets[next_seq], next_seq, checksum)     # make packet
+            clientSocket.sendto(send_packet, (serverName, serverPort))          # send data over UDP socket
 
-        start_timer = time.perf_counter_ns() / 10**7
-
-        # now wait for ACK from server
-        x = clientSocket.recv(1024)
-
-        stop = time.perf_counter_ns() / 10**7
-
-        if float(stop - start_timer) > 40:
-            the_timeout = stop - start_timer
-            clientSocket.sendto(send_packet, (serverName, serverPort))
-            x = clientSocket.recv(1024)
-            ack = x[:1]
-            print("TIMEOUT")
+            if base == next_seq:
+                send_timer.start()
+            next_seq += 1
 
         else:
-            ack = x[:1]
+            # receive ACK packet from server
+            serv_pkg, serverAddress = clientSocket.recvfrom(1024)
+            serv_pkg = pickle.loads(serv_pkg)
 
-            if error_type == 2:
-                ack = header.ack_error(ack, loss_pct)
+            seq = serv_pkg.serv_seq             # get server sequence number
+            ack = serv_pkg.verify               # get ack (1 or 0)
 
-            # if seq and ack are not equal, resend packet over UDP socket
-            if seq != ack:
-                print("ACK doesn't match, resending packet")
+            # if ACK is 1 (not NACK), update base of the window
+            if ack:
+                base = seq + 1
 
-                clientSocket.sendto(send_packet, (serverName, serverPort))
-                x = clientSocket.recv(1024)
-                ack = x[:1]
+            # if the base equals the sequence number, stop the timer, else start the timer
+            if base == next_seq:
+                send_timer.stop()
+
             else:
-                seq = header.flip_ack(seq)                                  # flip seq number bit to reflect next packet
-                flag = 1
-                x = 0
-                continue
+                send_timer.start()
+
+        count += 1
+
+    end = time.time()
 
     clientSocket.sendto(b"done", (serverName, serverPort))
 
@@ -88,10 +88,9 @@ try:
 except FileNotFoundError:
     print("File not found")
 
-clientSocket.close()                                            # close the socket
+clientSocket.close()                                        # close the socket
 
-end = datetime.datetime.now()
-exec_time = (end - start).total_seconds()
+total = end - start
 
-# print("Successfully copied image to server!")                 # prints completion statement
-print("Execution time: ", float(exec_time * 10**3), "ms")              # prints completion time
+print("Total time: ", total, "s")
+print("Successfully copied image to server!")               # prints completion statement
